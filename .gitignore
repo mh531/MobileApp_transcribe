@@ -1,0 +1,12 @@
+# Ignore sensitive config files
+flask_app.py
+geminitest.py
+testjadid.py
+.env
+my_secret_key.json
+
+# Ignore build artifacts and dependencies
+/node_modules/
+/dist/
+/build/
+*.log
