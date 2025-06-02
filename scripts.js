@@ -7,10 +7,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const recordContent = document.getElementById('record-content');
     const audioFileInput = document.getElementById('audioFile');
     const fileNameDisplay = document.getElementById('fileName');
+
     const startRecordBtn = document.getElementById('startRecordBtn');
     const stopRecordBtn = document.getElementById('stopRecordBtn');
     const recordingStatus = document.getElementById('recordingStatus');
     const audioPlayback = document.getElementById('audioPlayback');
+    const recordTimerDisplay = document.getElementById('recordTimerDisplay');
+
     const languageSelect = document.getElementById('language');
     const numSpeakersSelect = document.getElementById('numSpeakers');
     const contextTextarea = document.getElementById('context');
@@ -29,9 +32,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const navHistoryBtn = document.getElementById('navHistoryBtn');
     const navCreditsBtn = document.getElementById('navCreditsBtn');
+    const navAboutUsBtn = document.getElementById('navAboutUsBtn');
 
     const historyModal = document.getElementById('historyModal');
     const creditsModal = document.getElementById('creditsModal');
+    const aboutUsModal = document.getElementById('aboutUsModal');
     const closeModalBtns = document.querySelectorAll('.close-modal-btn');
 
     const historyListContainer = document.getElementById('historyListContainer');
@@ -58,15 +63,27 @@ document.addEventListener('DOMContentLoaded', () => {
     let audioChunks = [];
     let recordedAudioBlob = null;
     let uploadedFile = null;
-    const TRANSCRIPTION_HISTORY_KEY = 'transcriptionHistory_v1';
-    const USER_CREDITS_KEY = 'userCredits_v1';
+    const TRANSCRIPTION_HISTORY_KEY = 'transcriptionHistory_v3_fa';
+    const USER_CREDITS_KEY = 'userCredits_v3_fa';
+
+    let recordingTimerInterval;
+    let recordingSeconds = 0;
 
     // --- Hamburger Menu Logic ---
     if (hamburgerMenuBtn && sideNav && overlay && closeNavBtn) {
         hamburgerMenuBtn.addEventListener('click', () => {
             sideNav.classList.add('open');
             overlay.classList.add('active');
+            hamburgerMenuBtn.classList.add('active');
         });
+
+        function closeSideNav() {
+            if (sideNav) sideNav.classList.remove('open');
+            if (hamburgerMenuBtn) hamburgerMenuBtn.classList.remove('active');
+            if (overlay && !document.querySelector('.modal.active')) {
+                overlay.classList.remove('active');
+            }
+        }
 
         closeNavBtn.addEventListener('click', closeSideNav);
         overlay.addEventListener('click', () => {
@@ -74,13 +91,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 closeSideNav();
             }
         });
-    }
-
-    function closeSideNav() {
-        if (sideNav) sideNav.classList.remove('open');
-        if (overlay && !document.querySelector('.modal.active')) {
-            overlay.classList.remove('active');
-        }
     }
 
     // --- Modal Logic ---
@@ -139,6 +149,12 @@ document.addEventListener('DOMContentLoaded', () => {
             openModal(creditsModal);
         });
     }
+    if (navAboutUsBtn && aboutUsModal) {
+        navAboutUsBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            openModal(aboutUsModal);
+        });
+    }
 
     // --- Tab Functionality ---
     window.showTab = (tabName) => {
@@ -155,6 +171,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 recordContent.classList.add('active');
                 uploadContent.classList.remove('active');
                 clearUploadState();
+                if (recordTimerDisplay) recordTimerDisplay.textContent = formatTime(0);
             }
         }
     };
@@ -165,7 +182,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const file = event.target.files[0];
             if (file) {
                 uploadedFile = file;
-                fileNameDisplay.textContent = `Selected: ${file.name}`;
+                fileNameDisplay.textContent = `انتخاب شده: ${file.name}`;
                 recordedAudioBlob = null;
                 audioPlayback.style.display = 'none';
                 audioPlayback.src = '';
@@ -183,43 +200,65 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // --- Audio Recording Logic ---
-    if (startRecordBtn && stopRecordBtn && recordingStatus && audioPlayback && transcribeBtn && audioFileInput) {
+    function formatTime(totalSeconds) {
+        const minutes = Math.floor(totalSeconds / 60).toString().padStart(2, '۰');
+        const seconds = (totalSeconds % 60).toString().padStart(2, '۰');
+        return `${minutes}:${seconds}`;
+    }
+
+    if (startRecordBtn && stopRecordBtn && recordingStatus && audioPlayback && transcribeBtn && audioFileInput && recordTimerDisplay) {
         startRecordBtn.addEventListener('click', async () => {
             if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
                 try {
                     const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
                     mediaRecorder = new MediaRecorder(stream);
                     mediaRecorder.ondataavailable = (event) => audioChunks.push(event.data);
+
                     mediaRecorder.onstart = () => {
-                        startRecordBtn.disabled = true;
-                        stopRecordBtn.disabled = false;
+                        startRecordBtn.classList.add('hidden');
+                        stopRecordBtn.classList.remove('hidden');
+                        recordContent.classList.add('is-recording');
                         audioFileInput.disabled = true;
                         transcribeBtn.disabled = true;
-                        recordingStatus.textContent = 'Recording...';
+                        recordingStatus.textContent = 'در حال ضبط...';
                         audioPlayback.style.display = 'none'; audioPlayback.src = '';
                         audioChunks = []; recordedAudioBlob = null; uploadedFile = null;
                         if (fileNameDisplay) fileNameDisplay.textContent = '';
                         hideError();
+
+                        recordingSeconds = 0;
+                        recordTimerDisplay.textContent = formatTime(recordingSeconds);
+                        clearInterval(recordingTimerInterval);
+                        recordingTimerInterval = setInterval(() => {
+                            recordingSeconds++;
+                            recordTimerDisplay.textContent = formatTime(recordingSeconds);
+                        }, 1000);
                     };
+
                     mediaRecorder.onstop = () => {
-                        startRecordBtn.disabled = false; stopRecordBtn.disabled = true;
-                        audioFileInput.disabled = false; transcribeBtn.disabled = false;
-                        recordingStatus.textContent = 'Recording stopped. Ready to transcribe or re-record.';
+                        clearInterval(recordingTimerInterval);
+                        startRecordBtn.classList.remove('hidden');
+                        stopRecordBtn.classList.add('hidden');
+                        recordContent.classList.remove('is-recording');
+                        audioFileInput.disabled = false;
+                        transcribeBtn.disabled = false;
+                        recordingStatus.textContent = 'ضبط متوقف شد. آماده برای رونویسی یا ضبط مجدد.';
+
                         recordedAudioBlob = new Blob(audioChunks, { type: 'audio/webm' });
                         const audioUrl = URL.createObjectURL(recordedAudioBlob);
                         audioPlayback.src = audioUrl; audioPlayback.style.display = 'block';
                     };
                     mediaRecorder.onerror = (event) => {
-                        showError(`Recording error: ${event.error ? event.error.message : 'Unknown error'}`);
+                        showError(`خطای ضبط: ${event.error ? event.error.message : 'خطای نامشخص'}`);
                         resetRecordingControls();
                     };
                     mediaRecorder.start();
                 } catch (err) {
-                    showError(`Mic access error: ${err.message}. Note: HTTPS is often required for microphone access.`);
+                    showError(`خطای دسترسی به میکروفون: ${err.message}. توجه: برای دسترسی به میکروفون اغلب به HTTPS نیاز است.`);
                     resetRecordingControls();
                 }
             } else {
-                showError('Audio recording not supported in this browser.');
+                showError('ضبط صدا در این مرورگر پشتیبانی نمی‌شود.');
                 resetRecordingControls();
             }
         });
@@ -234,26 +273,33 @@ document.addEventListener('DOMContentLoaded', () => {
             if (mediaRecorder.stream && typeof mediaRecorder.stream.getTracks === 'function') {
                 mediaRecorder.stream.getTracks().forEach(track => track.stop());
             }
-            mediaRecorder.stop();
         }
+        clearInterval(recordingTimerInterval);
+        recordingSeconds = 0;
+        if (recordTimerDisplay) recordTimerDisplay.textContent = formatTime(0);
+        if (recordContent) recordContent.classList.remove('is-recording');
+
         audioChunks = []; recordedAudioBlob = null;
         if (audioPlayback) { audioPlayback.style.display = 'none'; audioPlayback.src = ''; }
         if (recordingStatus) recordingStatus.textContent = '';
         resetRecordingControls();
     }
+
     function resetRecordingControls() {
-        if (startRecordBtn) startRecordBtn.disabled = false;
-        if (stopRecordBtn) stopRecordBtn.disabled = true;
+        if (startRecordBtn) startRecordBtn.classList.remove('hidden');
+        if (stopRecordBtn) stopRecordBtn.classList.add('hidden');
+        if (recordContent) recordContent.classList.remove('is-recording');
+
         if (audioFileInput) audioFileInput.disabled = false;
         if (transcribeBtn && !uploadedFile && !recordedAudioBlob) transcribeBtn.disabled = true;
         else if (transcribeBtn) transcribeBtn.disabled = false;
     }
 
-    // --- Transcribe Button Logic (with Flask Backend Integration) ---
+    // --- Transcribe Button Logic ---
     if (transcribeBtn && languageSelect && numSpeakersSelect && contextTextarea && loadingIndicator && transcriptionOutputSection) {
         transcribeBtn.addEventListener('click', async () => {
             if (!uploadedFile && !recordedAudioBlob) {
-                showError('Please upload an audio file or record audio first.');
+                showError('لطفاً ابتدا یک فایل صوتی بارگذاری کنید یا صدا ضبط کنید.');
                 return;
             }
 
@@ -263,7 +309,7 @@ document.addEventListener('DOMContentLoaded', () => {
             transcribeBtn.disabled = true;
 
             const formData = new FormData();
-            const sourceName = uploadedFile ? uploadedFile.name : 'Recorded Audio';
+            const sourceName = uploadedFile ? uploadedFile.name : 'صدای ضبط شده';
             let audioFileNameForForm = 'recorded_audio.webm';
 
             if (uploadedFile) {
@@ -284,22 +330,19 @@ document.addEventListener('DOMContentLoaded', () => {
             formData.append('context', userContext);
 
             try {
-                console.log(`Sending to Flask: https://mhhf1375.pythonanywhere.com/api/transcribe with file: ${audioFileNameForForm}`);
-
                 const response = await fetch('https://mhhf1375.pythonanywhere.com/api/transcribe', {
                     method: 'POST',
                     body: formData,
                 });
 
                 if (!response.ok) {
-                    let errorData = { message: "Unknown server error." };
+                    let errorData = { message: "خطای نامشخص سرور." };
                     try {
                         errorData = await response.json();
                     } catch (e) {
-                        // If response is not JSON, use statusText
                         errorData.message = response.statusText || errorData.message;
                     }
-                    throw new Error(`Server error: ${response.status}. ${errorData.message}`);
+                    throw new Error(`خطای سرور: ${response.status}. ${errorData.message || 'پاسخی از سرور دریافت نشد.'}`);
                 }
 
                 const result = await response.json();
@@ -315,12 +358,12 @@ document.addEventListener('DOMContentLoaded', () => {
                         date: new Date().toISOString()
                     });
                 } else {
-                    showError(result.message || 'Transcription failed. Please try again.');
+                    showError(result.message || 'رونویسی ناموفق بود. لطفاً دوباره تلاش کنید.');
                 }
 
             } catch (error) {
-                showError(`Network or application error: ${error.message}. Check console & ensure backend is running.`);
-                console.error("Transcription process error:", error);
+                showError(`خطای شبکه یا برنامه: ${error.message}. کنسول را بررسی کرده و از فعال بودن بک‌اند اطمینان حاصل کنید.`);
+                console.error("خطای فرآیند رونویسی:", error);
             } finally {
                 loadingIndicator.style.display = 'none';
                 transcribeBtn.disabled = (!uploadedFile && !recordedAudioBlob);
@@ -343,12 +386,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 navigator.clipboard.writeText(transcriptionTextDiv.textContent)
                     .then(() => {
                         const originalHTML = copyTextBtn.innerHTML;
-                        copyTextBtn.innerHTML = `Copied!`;
+                        const svgIcon = copyTextBtn.querySelector('svg').outerHTML;
+                        copyTextBtn.innerHTML = `${svgIcon} کپی شد!`;
                         setTimeout(() => { copyTextBtn.innerHTML = originalHTML; }, 1500);
                     })
                     .catch(err => {
-                        showError('Failed to copy text. See console.');
-                        console.error('Copy error:', err);
+                        showError('خطا در کپی متن. کنسول را بررسی کنید.');
+                        console.error('خطای کپی:', err);
                     });
             }
         });
@@ -357,24 +401,22 @@ document.addEventListener('DOMContentLoaded', () => {
         downloadDocxBtn.addEventListener('click', () => {
             const transcription = transcriptionTextDiv.textContent;
             if (!transcription) {
-                showError("No transcription available to download."); return;
+                showError("رونوشتی برای دانلود موجود نیست."); return;
             }
-            simulateDocxDownload(transcription, "current_transcription.docx");
+            simulateDocxDownload(transcription, "رونویسی_فعلی.docx");
         });
     }
 
     function simulateDocxDownload(text, filename = "transcription.docx") {
-        // This is a placeholder. Actual DOCX generation would happen on the backend.
-        // For now, we can simulate by creating a text file download.
         const element = document.createElement('a');
-        const file = new Blob([`DOCX Content (Simulated):\n\n${text}`], {type: 'text/plain'});
+        const fileContent = `محتوای DOCX (شبیه‌سازی شده):\n\n${text}`;
+        const file = new Blob([fileContent], { type: 'text/plain;charset=utf-8' });
         element.href = URL.createObjectURL(file);
-        element.download = filename.replace('.docx', '.txt'); // Save as .txt for this simulation
-        document.body.appendChild(element); // Required for this to work in FireFox
+        element.download = filename.replace('.docx', '.txt');
+        document.body.appendChild(element);
         element.click();
         document.body.removeChild(element);
         URL.revokeObjectURL(element.href);
-        // alert(`Simulating DOCX download of "${filename}" with content preview:\n\n${text.substring(0,200)}...`);
     }
 
     // --- Transcription History Logic ---
@@ -383,7 +425,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const history = localStorage.getItem(TRANSCRIPTION_HISTORY_KEY);
             return history ? JSON.parse(history) : [];
         } catch (e) {
-            console.error("Error parsing history from localStorage", e);
+            console.error("خطا در خواندن تاریخچه از حافظه محلی", e);
             return [];
         }
     }
@@ -395,8 +437,8 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             localStorage.setItem(TRANSCRIPTION_HISTORY_KEY, JSON.stringify(history.slice(0, 50)));
         } catch (e) {
-            console.error("Error saving history to localStorage", e);
-            showError("Could not save transcription to history (localStorage might be full or disabled).");
+            console.error("خطا در ذخیره تاریخچه در حافظه محلی", e);
+            showError("امکان ذخیره رونویسی در تاریخچه وجود ندارد (ممکن است حافظه محلی پر یا غیرفعال باشد).");
         }
     }
 
@@ -417,10 +459,14 @@ document.addEventListener('DOMContentLoaded', () => {
         history.forEach(item => {
             const li = document.createElement('li');
             li.dataset.historyId = item.id;
+            const itemName = item.name ? item.name.substring(0, 30) + (item.name.length > 30 ? '...' : '') : 'رونویسی';
+            const itemDate = new Date(item.date).toLocaleString('fa-IR');
+            const itemPreview = item.text ? item.text.substring(0, 50) + (item.text.length > 50 ? '...' : '') : '';
+
             li.innerHTML = `
-                <span class="history-item-name">${item.name ? item.name.substring(0, 30) + (item.name.length > 30 ? '...' : '') : 'Transcription'}</span>
-                <span class="history-item-date">${new Date(item.date).toLocaleString()}</span>
-                <span class="history-item-preview">${item.text ? item.text.substring(0, 50) + (item.text.length > 50 ? '...' : '') : ''}</span>
+                <span class="history-item-name">${itemName}</span>
+                <span class="history-item-date">${itemDate}</span>
+                <span class="history-item-preview">${itemPreview}</span>
             `;
             li.addEventListener('click', () => viewHistoryItem(item.id));
             historyListUl.appendChild(li);
@@ -433,9 +479,9 @@ document.addEventListener('DOMContentLoaded', () => {
         const item = history.find(h => h.id === itemId);
         if (item) {
             currentViewingHistoryItem = item;
-            historyDetailDate.textContent = new Date(item.date).toLocaleString();
-            historyDetailName.textContent = item.name || 'N/A';
-            historyDetailLang.textContent = item.language || 'N/A';
+            historyDetailDate.textContent = new Date(item.date).toLocaleString('fa-IR');
+            historyDetailName.textContent = item.name || 'نامشخص';
+            historyDetailLang.textContent = item.language && languageSelect.querySelector(`option[value="${item.language}"]`) ? languageSelect.querySelector(`option[value="${item.language}"]`).textContent : 'نامشخص';
             historyDetailText.textContent = item.text;
             showHistoryDetailView();
         }
@@ -462,12 +508,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 navigator.clipboard.writeText(currentViewingHistoryItem.text)
                     .then(() => {
                         const originalHTML = copyHistoryTextBtn.innerHTML;
-                        copyHistoryTextBtn.innerHTML = `Copied!`;
+                        const svgIcon = copyHistoryTextBtn.querySelector('svg').outerHTML;
+                        copyHistoryTextBtn.innerHTML = `${svgIcon} کپی شد!`;
                         setTimeout(() => { copyHistoryTextBtn.innerHTML = originalHTML; }, 1500);
                     })
                     .catch(err => {
-                        showError('Failed to copy history text. See console.');
-                        console.error("History copy error:", err);
+                        showError('خطا در کپی متن تاریخچه. کنسول را بررسی کنید.');
+                        console.error("خطای کپی تاریخچه:", err);
                     });
             }
         });
@@ -476,7 +523,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (downloadHistoryDocxBtn) {
         downloadHistoryDocxBtn.addEventListener('click', () => {
             if (currentViewingHistoryItem && currentViewingHistoryItem.text) {
-                simulateDocxDownload(currentViewingHistoryItem.text, `${(currentViewingHistoryItem.name || 'history_item').replace(/\.[^/.]+$/, "")}.docx`);
+                simulateDocxDownload(currentViewingHistoryItem.text, `${(currentViewingHistoryItem.name || 'مورد_تاریخچه').replace(/\.[^/.]+$/, "")}.docx`);
             }
         });
     }
@@ -487,7 +534,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const credits = localStorage.getItem(USER_CREDITS_KEY);
             return credits ? parseInt(credits, 10) : 0;
         } catch (e) {
-            console.error("Error getting credits from localStorage", e);
+            console.error("خطا در دریافت اعتبار از حافظه محلی", e);
             return 0;
         }
     }
@@ -497,14 +544,14 @@ document.addEventListener('DOMContentLoaded', () => {
             localStorage.setItem(USER_CREDITS_KEY, newAmount);
             loadUserCredits();
         } catch (e) {
-            console.error("Error updating credits in localStorage", e);
-            showCreditMessage("Could not update credits (localStorage error).", 'error');
+            console.error("خطا در به‌روزرسانی اعتبار در حافظه محلی", e);
+            showCreditMessage("امکان به‌روزرسانی اعتبار وجود ندارد (خطای حافظه محلی).", 'error');
         }
     }
 
     function loadUserCredits() {
         if (currentCreditBalanceSpan) {
-            currentCreditBalanceSpan.textContent = `${getCredits()} minutes`;
+            currentCreditBalanceSpan.textContent = `${getCredits()} دقیقه`;
         }
     }
 
@@ -514,7 +561,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const amount = parseInt(btn.dataset.amount, 10);
                 const currentCredits = getCredits();
                 updateCredits(currentCredits + amount);
-                showCreditMessage(`Successfully added ${amount} minutes to your balance.`, 'success');
+                showCreditMessage(`با موفقیت ${amount} دقیقه به موجودی شما اضافه شد.`, 'success');
             });
         });
     }
@@ -523,12 +570,12 @@ document.addEventListener('DOMContentLoaded', () => {
         buyCustomCreditBtn.addEventListener('click', () => {
             const amount = parseInt(customCreditAmountInput.value, 10);
             if (isNaN(amount) || amount <= 0) {
-                showCreditMessage('Please enter a valid positive number of minutes.', 'error');
+                showCreditMessage('لطفاً تعداد دقیقه معتبر و مثبت وارد کنید.', 'error');
                 return;
             }
             const currentCredits = getCredits();
             updateCredits(currentCredits + amount);
-            showCreditMessage(`Successfully added ${amount} minutes to your balance.`, 'success');
+            showCreditMessage(`با موفقیت ${amount} دقیقه به موجودی شما اضافه شد.`, 'success');
             customCreditAmountInput.value = '';
         });
     }
@@ -547,6 +594,9 @@ document.addEventListener('DOMContentLoaded', () => {
         if (errorMessageDiv) {
             errorMessageDiv.textContent = message;
             errorMessageDiv.style.display = 'block';
+            if (transcriptionOutputSection && transcriptionOutputSection.contains(errorMessageDiv)) {
+                errorMessageDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }
         }
     }
     function hideError() {
@@ -561,9 +611,10 @@ document.addEventListener('DOMContentLoaded', () => {
     loadUserCredits();
     if (historyModal) historyModal.classList.remove('active');
     if (creditsModal) creditsModal.classList.remove('active');
+    if (aboutUsModal) aboutUsModal.classList.remove('active');
     if (overlay) overlay.classList.remove('active');
-    if (transcribeBtn) transcribeBtn.disabled = true; // Start disabled
-    resetRecordingControls();
+    if (transcribeBtn) transcribeBtn.disabled = true;
+    clearRecordingState();
 
-    console.log("App initialized. Ensure Flask backend is running on http://127.0.0.1:5000 for transcription.");
+    console.log("برنامه راه‌اندازی شد. برای رونویسی، از فعال بودن بک‌اند اطمینان حاصل کنید.");
 });
