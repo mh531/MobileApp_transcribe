@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Speech-to-Text Mobile</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="icon" href="favicon.ico" type="image/x-icon"> </head>
+<body>
+    <div class="app-shell">
+        <header>
+            <div class="header-content">
+                <h1>Transcribe Audio</h1>
+                <button id="hamburgerMenuBtn" class="hamburger-button" aria-label="Open menu">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="28" height="28">
+                        <path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"></path>
+                    </svg>
+                </button>
+            </div>
+            <p>Upload or record audio to get your transcript.</p>
+        </header>
+
+        <nav id="sideNav" class="side-nav">
+            <button id="closeNavBtn" class="close-nav-button" aria-label="Close menu">&times;</button>
+            <ul>
+                <li><a href="#" id="navHistoryBtn">📜 Transcription History</a></li>
+                <li><a href="#" id="navCreditsBtn">💰 Credits</a></li>
+            </ul>
+        </nav>
+        <div id="overlay" class="overlay"></div>
+
+
+        <main id="mainContent" class="main-content">
+            <section class="audio-input-section">
+                <h2>1. Provide Your Audio</h2>
+                <div class="input-method-tabs">
+                    <button id="tab-upload" class="tab-button active" onclick="showTab('upload')">Upload File</button>
+                    <button id="tab-record" class="tab-button" onclick="showTab('record')">Record Audio</button>
+                </div>
+
+                <div id="upload-content" class="tab-content active">
+                    <label for="audioFile" class="file-label">
+                        <span>Choose Audio File</span>
+                        <input type="file" id="audioFile" accept="audio/*">
+                    </label>
+                    <p id="fileName" class="file-name-display"></p>
+                </div>
+
+                <div id="record-content" class="tab-content">
+                    <button id="startRecordBtn" class="record-button">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="24" height="24"><path d="M12 14a2 2 0 1 0 0-4 2 2 0 0 0 0 4zm0-6a4 4 0 0 0-4 4v4a4 4 0 0 0 8 0V8a4 4 0 0 0-4-4z"></path><path d="M12 18a6 6 0 0 1-6-6H4a8 8 0 0 0 7 7.93V22h2v-2.07A8 8 0 0 0 20 12h-2a6 6 0 0 1-6 6z"></path></svg>
+                        Start Recording
+                    </button>
+                    <button id="stopRecordBtn" class="record-button" disabled>
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="24" height="24"><path d="M6 6h12v12H6z"></path></svg>
+                        Stop Recording
+                    </button>
+                    <p id="recordingStatus" class="recording-status"></p>
+                    <audio id="audioPlayback" controls style="display:none; margin-top: 10px; width: 100%;"></audio>
+                </div>
+            </section>
+
+            <section class="options-section">
+                <h2>2. Audio Details (Optional)</h2>
+                <div class="form-group">
+                    <label for="language">Language of Audio:</label>
+                    <select id="language">
+                        <option value="en">English</option>
+                        <option value="fa">Persian</option>
+                        <option value="ar">Arabic</option>
+                        <option value="tr">Turkish</option>
+                        <option value="de">German</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="numSpeakers">Number of Speakers:</label>
+                    <select id="numSpeakers">
+                        <option value="solo">Solo (1 person)</option>
+                        <option value="2">2 people</option>
+                        <option value="multiple">More than 2 people</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="context">Context/Explanation (Optional):</label>
+                    <textarea id="context" rows="3" placeholder="E.g., Medical discussion, technical terms related to AI..."></textarea>
+                </div>
+            </section>
+
+            <section class="action-section">
+                <button id="transcribeBtn" class="primary-button">Transcribe Audio</button>
+                <p id="loadingIndicator" class="loading-indicator" style="display: none;">
+                    <span class="spinner"></span> Processing... Please wait.
+                </p>
+            </section>
+
+            <section id="transcriptionOutputSection" class="transcription-output-section" style="display: none;">
+                <h2>3. Your Transcription</h2>
+                <div class="transcription-controls">
+                    <button id="copyTextBtn" class="icon-button" title="Copy Text">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="20" height="20"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"></path></svg>
+                        Copy
+                    </button>
+                    <button id="downloadDocxBtn" class="icon-button" title="Download as .docx">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="20" height="20"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"></path></svg>
+                        Download .docx
+                    </button>
+                </div>
+                <div id="transcriptionText" class="transcription-text-area" contenteditable="false" aria-label="Transcription Output">
+                </div>
+                <p id="errorMessage" class="error-message" style="display: none;"></p>
+            </section>
+        </main>
+
+        <div id="historyModal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>Transcription History</h2>
+                    <button class="close-modal-btn" data-modal-id="historyModal">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div id="historyListContainer">
+                        <p id="noHistoryMessage" style="display:none;">No transcriptions saved yet.</p>
+                        <ul id="historyList"></ul>
+                    </div>
+                    <div id="historyDetailView" style="display:none;">
+                        <h3>Transcription Details</h3>
+                        <p><strong>Date:</strong> <span id="historyDetailDate"></span></p>
+                        <p><strong>File/Recording:</strong> <span id="historyDetailName"></span></p>
+                        <p><strong>Language:</strong> <span id="historyDetailLang"></span></p>
+                        <div class="transcription-controls">
+                             <button id="copyHistoryTextBtn" class="icon-button" title="Copy Text">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="20" height="20"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"></path></svg>
+                                Copy
+                            </button>
+                            <button id="downloadHistoryDocxBtn" class="icon-button" title="Download as .docx">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="20" height="20"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"></path></svg>
+                                Download .docx
+                            </button>
+                        </div>
+                        <div id="historyDetailText" class="transcription-text-area"></div>
+                        <button id="backToHistoryListBtn" class="secondary-button">Back to List</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="creditsModal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>Credits</h2>
+                    <button class="close-modal-btn" data-modal-id="creditsModal">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <p>Your current credit balance: <strong id="currentCreditBalance">0 minutes</strong></p>
+                    <hr>
+                    <h3>Buy More Credits</h3>
+                    <div class="credit-options">
+                        <button class="credit-package-btn" data-amount="60">Buy 60 minutes</button>
+                        <button class="credit-package-btn" data-amount="180">Buy 180 minutes</button>
+                        <button class="credit-package-btn" data-amount="300">Buy 300 minutes</button>
+                    </div>
+                    <div class="form-group">
+                        <label for="customCreditAmount">Or enter custom amount (minutes):</label>
+                        <input type="number" id="customCreditAmount" min="10" placeholder="e.g., 120">
+                    </div>
+                    <button id="buyCustomCreditBtn" class="primary-button">Buy Custom Amount</button>
+                    <p id="creditMessage" class="message" style="display:none;"></p>
+                </div>
+            </div>
+        </div>
+
+        <footer>
+            <p>&copy; 2024 Your Speech-to-Text App</p>
+        </footer>
+    </div>
+
+    <script src="scripts.js"></script>
+</body>
+</html>
