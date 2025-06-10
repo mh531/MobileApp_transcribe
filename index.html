@@ -1,253 +1,125 @@
 <!DOCTYPE html>
 <html lang="fa" dir="rtl">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>مبدل گفتار به متن موبایل - لاگ لایف</title>
-    <link rel="icon" href="favicon.ico" type="image/x-icon">
+    <title>رونویسی گفتار - لاگ لایف</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;600;700;800&display=swap"
-        rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
 </head>
-
 <body>
-    <div class="app-shell">
-        <header>
-            <div class="header-content">
-                <button id="hamburgerMenuBtn" class="hamburger-button" aria-label="باز کردن منو">
-                    <span></span><span></span><span></span><span></span>
-                </button>
-                <h1 class="company-title"><span class="logo-brackets">&lt;/&gt;</span> لاگــ لایفــ <span
-                        class="logo-brackets">&lt;/&gt;</span></h1>
+    <header class="app-header">
+        <button class="menu-toggle" aria-label="باز کردن منو">&#9776;</button>
+        <h1 class="logo">&lt;/&gt; لاگ لایف &lt;/&gt;</h1>
+    </header>
+
+    <nav class="side-menu" aria-label="منو">
+        <button class="close-menu" aria-label="بستن منو">&times;</button>
+        <ul>
+            <li><a href="#" data-modal="historyModal">تاریخچه</a></li>
+            <li><a href="#" data-modal="creditsModal">اعتبارها</a></li>
+            <li><a href="#" data-modal="aboutModal">درباره ما</a></li>
+        </ul>
+    </nav>
+    <div class="overlay"></div>
+
+    <main>
+        <section class="card">
+            <h2>۱. ارائه صدا</h2>
+            <div class="tabs">
+                <button data-tab="upload" class="active">بارگذاری</button>
+                <button data-tab="record">ضبط</button>
             </div>
-        </header>
-
-        <nav id="sideNav" class="side-nav">
-            <button id="closeNavBtn" class="close-nav-button" aria-label="بستن منو">&times;</button>
-            <ul>
-                <li><a href="#" id="navHistoryBtn">📜 تاریخچه رونویسی‌ها</a></li>
-                <li><a href="#" id="navCreditsBtn">💰 اعتبارها</a></li>
-                <li><a href="#" id="navAboutUsBtn">🏢 درباره ما</a></li>
-            </ul>
-        </nav>
-        <div id="overlay" class="overlay"></div>
-
-        <main id="mainContent" class="main-content">
-            <section class="audio-input-section">
-                <h2>۱. صدای خود را ارائه دهید</h2>
-                <div class="input-method-tabs">
-                    <button id="tab-upload" class="tab-button active" onclick="showTab('upload')">بارگذاری فایل</button>
-                    <button id="tab-record" class="tab-button" onclick="showTab('record')">ضبط صدا</button>
-                </div>
-
-                <div id="upload-content" class="tab-content active">
-                    <label for="audioFile" class="file-label">
-                        <span>انتخاب فایل صوتی</span>
-                        <input type="file" id="audioFile" accept="audio/*">
-                    </label>
-                    <p id="fileName" class="file-name-display"></p>
-                </div>
-
-                <div id="record-content" class="tab-content">
-                    <div id="recordTimerDisplay" class="record-timer">۰۰:۰۰</div>
-                    <button id="startRecordBtn" class="record-button">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="24"
-                            height="24">
-                            <path
-                                d="M12 14a2 2 0 1 0 0-4 2 2 0 0 0 0 4zm0-6a4 4 0 0 0-4 4v4a4 4 0 0 0 8 0V8a4 4 0 0 0-4-4z">
-                            </path>
-                            <path
-                                d="M12 18a6 6 0 0 1-6-6H4a8 8 0 0 0 7 7.93V22h2v-2.07A8 8 0 0 0 20 12h-2a6 6 0 0 1-6 6z">
-                            </path>
-                        </svg>
-                        شروع ضبط
-                    </button>
-                    <button id="stopRecordBtn" class="record-button hidden">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="24"
-                            height="24">
-                            <path d="M6 6h12v12H6z"></path>
-                        </svg>
-                        توقف ضبط
-                    </button>
-                    <p id="recordingStatus" class="recording-status"></p>
-                    <audio id="audioPlayback" controls style="display:none; margin-top: 10px; width: 100%;"></audio>
-                </div>
-            </section>
-
-            <section class="options-section">
-                <h2>۲. جزئیات صدا (اختیاری)</h2>
-                <div class="form-group">
-                    <label for="language">زبان صدا:</label>
-                    <select id="language">
-                        <option value="en">انگلیسی</option>
-                        <option value="fa" selected>فارسی</option>
-                        <option value="ar">عربی</option>
-                        <option value="tr">ترکی</option>
-                        <option value="de">آلمانی</option>
-                    </select>
-                </div>
-
-                <div class="form-group">
-                    <label for="numSpeakers">تعداد گویندگان:</label>
-                    <select id="numSpeakers">
-                        <option value="solo">تک نفره (۱ نفر)</option>
-                        <option value="2">۲ نفر</option>
-                        <option value="multiple">بیش از ۲ نفر</option>
-                    </select>
-                </div>
-
-                <div class="form-group">
-                    <label for="context">زمینه/توضیحات (اختیاری):</label>
-                    <textarea id="context" rows="3"
-                        placeholder="مثال: بحث پزشکی، اصطلاحات فنی مرتبط با هوش مصنوعی..."></textarea>
-                </div>
-            </section>
-
-            <section class="action-section">
-                <button id="transcribeBtn" class="primary-button">رونویسی صدا</button>
-                <p id="loadingIndicator" class="loading-indicator" style="display: none;">
-                    <span class="spinner"></span> در حال پردازش... لطفاً منتظر بمانید.
-                </p>
-            </section>
-
-            <section id="transcriptionOutputSection" class="transcription-output-section" style="display: none;">
-                <h2>۳. رونویسی شما</h2>
-                <div class="transcription-controls">
-                    <button id="copyTextBtn" class="icon-button" title="کپی متن">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="20"
-                            height="20">
-                            <path
-                                d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z">
-                            </path>
-                        </svg>
-                        کپی
-                    </button>
-                    <button id="downloadDocxBtn" class="icon-button" title="دانلود به صورت docx.">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="20"
-                            height="20">
-                            <path
-                                d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z">
-                            </path>
-                        </svg>
-                        دانلود docx.
-                    </button>
-                </div>
-                <div id="transcriptionText" class="transcription-text-area" contenteditable="false"
-                    aria-label="خروجی رونویسی">
-                </div>
-                <p id="errorMessage" class="error-message" style="display: none;"></p>
-            </section>
-        </main>
-
-        <div id="historyModal" class="modal">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h2>تاریخچه رونویسی‌ها</h2>
-                    <button class="close-modal-btn" data-modal-id="historyModal">&times;</button>
-                </div>
-                <div class="modal-body">
-                    <div id="historyListContainer">
-                        <p id="noHistoryMessage" style="display:none;">هنوز هیچ رونویسی ذخیره نشده است.</p>
-                        <ul id="historyList"></ul>
-                    </div>
-                    <div id="historyDetailView" style="display:none;">
-                        <h3>جزئیات رونویسی</h3>
-                        <p><strong>تاریخ:</strong> <span id="historyDetailDate"></span></p>
-                        <p><strong>فایل/ضبط:</strong> <span id="historyDetailName"></span></p>
-                        <p><strong>زبان:</strong> <span id="historyDetailLang"></span></p>
-                        <div class="transcription-controls">
-                            <button id="copyHistoryTextBtn" class="icon-button" title="کپی متن">
-                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"
-                                    width="20" height="20">
-                                    <path
-                                        d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z">
-                                    </path>
-                                </svg>
-                                کپی
-                            </button>
-                            <button id="downloadHistoryDocxBtn" class="icon-button" title="دانلود به صورت docx.">
-                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"
-                                    width="20" height="20">
-                                    <path
-                                        d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z">
-                                    </path>
-                                </svg>
-                                دانلود docx.
-                            </button>
-                        </div>
-                        <div id="historyDetailText" class="transcription-text-area"></div>
-                        <button id="backToHistoryListBtn" class="secondary-button">بازگشت به لیست</button>
-                    </div>
-                </div>
+            <div id="upload" class="tab-content active">
+                <label class="file-input">
+                    <span>انتخاب فایل صوتی</span>
+                    <input type="file" id="audioFile" accept="audio/*">
+                </label>
+                <p id="fileName" class="small"></p>
             </div>
+            <div id="record" class="tab-content">
+                <div id="timer" class="timer">۰۰:۰۰</div>
+                <button id="startRecord" class="btn success">شروع ضبط</button>
+                <button id="stopRecord" class="btn danger hidden">توقف ضبط</button>
+                <p id="recordMsg" class="small"></p>
+                <audio id="playback" controls class="hidden"></audio>
+            </div>
+        </section>
+
+        <section class="card">
+            <h2>۲. جزئیات صدا</h2>
+            <div class="form-group">
+                <label for="language">زبان:</label>
+                <select id="language">
+                    <option value="fa">فارسی</option>
+                    <option value="en">English</option>
+                    <option value="ar">العربية</option>
+                    <option value="tr">Türkçe</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="speakers">تعداد گویندگان:</label>
+                <select id="speakers">
+                    <option value="1">۱ نفر</option>
+                    <option value="2">۲ نفر</option>
+                    <option value="multi">بیشتر</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="context">توضیحات:</label>
+                <textarea id="context" rows="3"></textarea>
+            </div>
+        </section>
+
+        <section class="card actions">
+            <button id="transcribe" class="btn primary" disabled>رونویسی</button>
+            <div id="loading" class="loading hidden">در حال پردازش...</div>
+        </section>
+
+        <section id="output" class="card hidden">
+            <h2>۳. نتیجه</h2>
+            <div class="controls">
+                <button id="copyText" class="btn secondary">کپی</button>
+                <button id="downloadText" class="btn secondary">دانلود</button>
+            </div>
+            <div id="transcription" class="output" contenteditable="false"></div>
+            <p id="error" class="error hidden"></p>
+        </section>
+    </main>
+
+    <footer class="app-footer">&copy; لاگ لایف 1404</footer>
+
+    <!-- Modals -->
+    <div id="historyModal" class="modal">
+        <div class="modal-content">
+            <h3>تاریخچه رونویسی</h3>
+            <ul id="historyList"></ul>
+            <button class="btn secondary" data-close>بستن</button>
         </div>
-
-        <div id="creditsModal" class="modal">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h2>اعتبارها</h2>
-                    <button class="close-modal-btn" data-modal-id="creditsModal">&times;</button>
-                </div>
-                <div class="modal-body">
-                    <p>موجودی اعتبار فعلی شما: <strong id="currentCreditBalance">۰ دقیقه</strong></p>
-                    <hr>
-                    <h3>خرید اعتبار بیشتر</h3>
-                    <div class="credit-options">
-                        <button class="credit-package-btn" data-amount="60">خرید ۶۰ دقیقه</button>
-                        <button class="credit-package-btn" data-amount="180">خرید ۱۸۰ دقیقه</button>
-                        <button class="credit-package-btn" data-amount="300">خرید ۳۰۰ دقیقه</button>
-                    </div>
-                    <div class="form-group">
-                        <label for="customCreditAmount">یا مقدار سفارشی وارد کنید (دقیقه):</label>
-                        <input type="number" id="customCreditAmount" min="10" placeholder="مثال: ۱۲۰">
-                    </div>
-                    <button id="buyCustomCreditBtn" class="primary-button">خرید مقدار سفارشی</button>
-                    <p id="creditMessage" class="message" style="display:none;"></p>
-                </div>
-            </div>
-        </div>
-
-        <div id="aboutUsModal" class="modal">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h2>درباره ما - loglife</h2>
-                    <button class="close-modal-btn" data-modal-id="aboutUsModal">&times;</button>
-                </div>
-                <div class="modal-body">
-                    <h3>درباره شرکت loglife</h3>
-                    <p>شرکت loglife در حوزه توسعه نرم‌افزارهای مرتبط با علوم شناختی و روانشناختی فعالیت می‌کند. این
-                        نرم‌افزار تبدیل گفتار به متن، ابزاری کمکی و بخشی از یک پروژه بزرگتر با هدف پیش‌بینی و بررسی
-                        وضعیت سلامت روان افراد است. این مهم از طریق تحلیل گزارش‌های خوداظهاری کلامی، نتایج آزمون‌های
-                        روانشناختی و داده‌های حاصل از فعالیت کاربران در شبکه‌های اجتماعی (با رضایت و آگاهی کامل ایشان)
-                        انجام می‌پذیرد.</p>
-                    <p>ما در loglife متعهد به استفاده مسئولانه از فناوری و هوش مصنوعی برای بهبود کیفیت زندگی و ارتقاء
-                        سلامت روان در جامعه هستیم و حفظ حریم خصوصی کاربران برای ما در اولویت قرار دارد.</p>
-                    <hr>
-                    <h3>راه‌های ارتباطی</h3>
-                    <p><strong>ایمیل پشتیبانی:</strong> <a href="mailto:support@loglife.ir"
-                            style="color: var(--primary-color); text-decoration: none; direction: ltr; unicode-bidi: embed;">support@loglife.ir</a>
-                    </p>
-                    <p><strong>تلفن تماس (پشتیبانی):</strong> <a href="tel:+989120145572"
-                            style="color: var(--primary-color); text-decoration: none; direction: ltr; unicode-bidi: embed;">۰۹۱۲۰۱۴۵۵۷۲</a>
-                    </p>
-                    <p><strong>وب‌سایت:</strong> <a href="https://loglife.ir" target="_blank"
-                            style="color: var(--primary-color); text-decoration: none; direction: ltr; unicode-bidi: embed;">loglife.ir</a>
-                    </p>
-                </div>
-            </div>
-        </div>
-
-        <footer>
-            <p>&copy; پروژه لـاگ لـایف (حبیبی) - بخش ۱ - 12 خرداد 1404
-
- </p>
-        </footer>
     </div>
 
-    <script src="scripts.js"></script>
-</body>
+    <div id="creditsModal" class="modal">
+        <div class="modal-content">
+            <h3>اعتبارها</h3>
+            <p>موجودی: <span id="creditBalance">۰</span> دقیقه</p>
+            <div class="credit-controls">
+                <button data-credit="60" class="btn success">60 دقیقه</button>
+                <button data-credit="180" class="btn success">180 دقیقه</button>
+            </div>
+            <button class="btn secondary" data-close>بستن</button>
+        </div>
+    </div>
 
+    <div id="aboutModal" class="modal">
+        <div class="modal-content">
+            <h3>درباره ما</h3>
+            <p>شرکت loglife ...</p>
+            <button class="btn secondary" data-close>بستن</button>
+        </div>
+    </div>
+
+    <script src="scripts.js" defer></script>
+</body>
 </html>
