@@ -1,7 +1,7 @@
 // scripts.js
 document.addEventListener('DOMContentLoaded', () => {
   // ---- CONFIG ----
-  const API_BASE = "https://mhhf1375.pythonanywhere.com"; // your backend
+  const API_BASE = "https://mhhf1375.pythonanywhere.com"; // your backend base
 
   // --- DOM Element Selectors ---
   const tabUpload = document.getElementById('tab-upload');
@@ -61,7 +61,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const buyCustomCreditBtn = document.getElementById('buyCustomCreditBtn');
   const creditMessage = document.getElementById('creditMessage');
 
-  // ---- NEW: Auth UI elements ----
+  // ---- Auth elements ----
   const loginModal = document.getElementById('loginModal');
   const loginUsername = document.getElementById('loginUsername');
   const loginPassword = document.getElementById('loginPassword');
@@ -80,12 +80,12 @@ document.addEventListener('DOMContentLoaded', () => {
   let recordingTimerInterval;
   let recordingSeconds = 0;
 
-  // ========== AUTH HELPERS ==========
+  // ===== AUTH HELPERS =====
   function openLoginModal() {
     if (!loginModal) return;
-    if (loginError) loginError.style.display = "none";
-    if (loginUsername) loginUsername.value = "";
-    if (loginPassword) loginPassword.value = "";
+    loginError && (loginError.style.display = "none");
+    loginUsername && (loginUsername.value = "");
+    loginPassword && (loginPassword.value = "");
     loginModal.classList.add('active');
     loginModal.style.display = 'flex';
     overlay && overlay.classList.add('active');
@@ -145,7 +145,7 @@ document.addEventListener('DOMContentLoaded', () => {
     return false;
   }
 
-  // Submit login
+  // Login submit
   loginBtn?.addEventListener("click", async () => {
     if (!loginUsername || !loginPassword || !loginError) return;
     loginError.style.display = "none";
@@ -160,7 +160,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const r = await fetch(`${API_BASE}/api/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        credentials: "include", // receive cookie
+        credentials: "include",
         body: JSON.stringify({ username, password })
       });
       const j = await r.json();
@@ -177,17 +177,10 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  // Enter key to submit
+  // Enter key submits
   [loginUsername, loginPassword].forEach(el => {
     el?.addEventListener("keypress", (ev) => {
       if (ev.key === "Enter") loginBtn?.click();
-    });
-  });
-
-  // Allow close via shared close buttons
-  closeModalBtns?.forEach(btn => {
-    btn.addEventListener('click', () => {
-      if (btn.dataset.modalId === 'loginModal') closeLoginModal();
     });
   });
 
@@ -236,6 +229,7 @@ document.addEventListener('DOMContentLoaded', () => {
     btn.addEventListener('click', () => {
       const modalId = btn.dataset.modalId;
       if (modalId) {
+        if (modalId === 'loginModal') { closeLoginModal(); return; }
         const modalToClose = document.getElementById(modalId);
         if (modalToClose) closeModal(modalToClose);
       }
@@ -244,7 +238,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
   overlay?.addEventListener('click', () => {
     const activeModal = document.querySelector('.modal.active');
-    if (activeModal && !sideNav.classList.contains('open')) closeModal(activeModal);
+    if (activeModal && !sideNav.classList.contains('open')) {
+      if (activeModal.id === 'loginModal') closeLoginModal();
+      else closeModal(activeModal);
+    }
   });
 
   // --- Navigation Links ---
@@ -271,7 +268,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // --- Tab Functionality ---
+  // --- Tabs ---
   window.showTab = (tabName) => {
     if (tabUpload && tabRecord && uploadContent && recordContent) {
       if (tabName === 'upload') {
@@ -291,7 +288,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   };
 
-  // --- File Upload Logic ---
+  // --- File Upload ---
   if (audioFileInput && fileNameDisplay && audioPlayback) {
     audioFileInput.addEventListener('change', (event) => {
       const file = event.target.files[0];
@@ -314,7 +311,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (transcribeBtn && !recordedAudioBlob) transcribeBtn.disabled = true;
   }
 
-  // --- Audio Recording Logic ---
+  // --- Recording ---
   function formatTime(totalSeconds) {
     const minutes = Math.floor(totalSeconds / 60).toString().padStart(2, '۰');
     const seconds = (totalSeconds % 60).toString().padStart(2, '۰');
@@ -410,10 +407,9 @@ document.addEventListener('DOMContentLoaded', () => {
     else if (transcribeBtn) transcribeBtn.disabled = false;
   }
 
-  // --- Transcribe Button Logic (now requires login) ---
+  // --- Transcribe (requires login) ---
   if (transcribeBtn && languageSelect && numSpeakersSelect && contextTextarea && loadingIndicator && transcriptionOutputSection) {
     transcribeBtn.addEventListener('click', async () => {
-      // Require login
       const ok = await ensureLogin();
       if (!ok) return;
 
@@ -451,7 +447,7 @@ document.addEventListener('DOMContentLoaded', () => {
       try {
         const response = await fetch(`${API_BASE}/api/transcribe`, {
           method: 'POST',
-          credentials: 'include', // send cookie
+          credentials: 'include', // send session cookie
           body: formData,
         });
 
@@ -520,9 +516,7 @@ document.addEventListener('DOMContentLoaded', () => {
   if (downloadDocxBtn && transcriptionTextDiv) {
     downloadDocxBtn.addEventListener('click', () => {
       const transcription = transcriptionTextDiv.textContent;
-      if (!transcription) {
-        showError("رونوشتی برای دانلود موجود نیست."); return;
-      }
+      if (!transcription) { showError("رونوشتی برای دانلود موجود نیست."); return; }
       simulateDocxDownload(transcription, "رونویسی_فعلی.docx");
     });
   }
@@ -539,7 +533,7 @@ document.addEventListener('DOMContentLoaded', () => {
     URL.revokeObjectURL(element.href);
   }
 
-  // --- Transcription History Logic ---
+  // --- History ---
   function getHistory() {
     try {
       const history = localStorage.getItem(TRANSCRIPTION_HISTORY_KEY);
@@ -648,7 +642,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // --- Credit System Logic (Simulated) ---
+  // --- Credits (simulated) ---
   function getCredits() {
     try {
       const credits = localStorage.getItem(USER_CREDITS_KEY);
@@ -707,7 +701,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  // --- Error Handling ---
+  // --- Error helpers ---
   function showError(message) {
     if (errorMessageDiv) {
       errorMessageDiv.textContent = message;
@@ -733,7 +727,15 @@ document.addEventListener('DOMContentLoaded', () => {
   if (overlay) overlay.classList.remove('active');
   if (transcribeBtn) transcribeBtn.disabled = true;
   clearRecordingState();
-  renderAuthUI(); // NEW: show "ورود" or username • خروج
+
+  // Show auth UI and auto-open login if not authenticated
+  (async () => {
+    await renderAuthUI();
+    const s = await apiSession();
+    if (!s.authenticated) {
+      openLoginModal();
+    }
+  })();
 
   console.log("برنامه راه‌اندازی شد. برای رونویسی، از فعال بودن بک‌اند اطمینان حاصل کنید.");
 });
